@@ -1,0 +1,29 @@
+function [mi] = mri_img_c(img1,img2,nbins)
+   
+    if nargin < 3
+        nbins = 16;
+    end
+    
+    Yn = round((nbins-1)*mriNormalization(img1,[0.02 0.98]))+1;
+    Ync = sub2ind([nbins nbins nbins],Yn(:,:,:,1),Yn(:,:,:,2),Yn(:,:,:,3));
+    
+    Ym = round((nbins-1)*mriNormalization(img2,[0.02 0.98]))+1;
+    Ymc = sub2ind([nbins nbins nbins],Ym(:,:,:,1),Ym(:,:,:,2),Ym(:,:,:,3));
+    
+    A = [Ync(:) Ymc(:)];
+    [C,IA,IC] = unique(A,'rows');
+    tmp = zeros(size(IA));
+    for i=1:numel(IC)
+      tmp(IC(i)) = tmp(IC(i))+1; 
+    end    
+    p =  sparse(C(:,1),C(:,2),tmp,16^3,16^3,numel(IA));
+    
+    p = p/sum(p(:));
+    pn = sum(p,1);
+    pm = sum(p,2);
+    Pn = repmat(pn,[numel(pm) 1]);
+    Pm = repmat(pm,[1 numel(pn)]);
+    
+    mi = full(sum(sum(p.*log((p+eps)./(Pn.*Pm+eps)))));
+     
+end
